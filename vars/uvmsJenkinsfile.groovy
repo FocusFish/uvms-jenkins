@@ -7,12 +7,12 @@ def call(body) {
   body()
   //END evaluate
 
-  def MAVEN_PROFILES       = (inParams.MAVEN_PROFILES)      ?: ''
-  def MAVEN_PROFILES_MAIN  = (inParams.MAVEN_PROFILES_MAIN) ?: ''
-  def MAVEN_OPTS_MAIN      = (inParams.MAVEN_OPTS_MAIN)     ?: '-DskipTests'
-  def Boolean DOCKER       = (inParams.DOCKER)              ?: false
+  def MAVEN_PROFILES          = (inParams.MAVEN_PROFILES)         ?: ''
+  def MAVEN_PROFILES_RELEASE  = (inParams.MAVEN_PROFILES_RELEASE) ?: ''
+  def MAVEN_OPTS_RELEASE      = (inParams.MAVEN_OPTS_RELEASE)     ?: '-DskipTests'
+  def Boolean DOCKER          = (inParams.DOCKER)                 ?: false
 
-  def LOCK_RESOURCE        = (DOCKER) ? 'Docker' : ''
+  def LOCK_RESOURCE           = (DOCKER) ? 'Docker' : ''
   def version
 
   node {
@@ -60,7 +60,7 @@ def call(body) {
           sh "mvn clean deploy $MAVEN_PROFILES -Dci=true -U"
         }
       }
-      stage('Build main') {
+      stage('Build release') {
         when {
           allOf {
             branch 'main'
@@ -68,7 +68,7 @@ def call(body) {
           }
         }
         steps {
-          sh "mvn clean deploy $MAVEN_OPTS_MAIN $MAVEN_PROFILES_MAIN -Dci=true -U"
+          sh "mvn clean deploy $MAVEN_OPTS_RELEASE $MAVEN_PROFILES_RELEASE -Dci=true -U"
         }
       }
       stage('SonarQube analysis') {
