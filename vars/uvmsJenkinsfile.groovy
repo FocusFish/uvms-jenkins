@@ -9,7 +9,7 @@ def call(body) {
 
   def MAVEN_PROFILES       = (inParams.MAVEN_PROFILES)      ?: ''
   def MAVEN_PROFILES_MAIN  = (inParams.MAVEN_PROFILES_MAIN) ?: ''
-  def MAVEN_OPTS_MAIN      = (inParams.MAVEN_OPTS_MAIN)     ?: ''
+  def MAVEN_OPTS_MAIN      = (inParams.MAVEN_OPTS_MAIN)     ?: '-DskipTests'
   def Boolean DOCKER       = (inParams.DOCKER)              ?: false
 
   def LOCK_RESOURCE        = (DOCKER) ? 'Docker' : ''
