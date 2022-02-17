@@ -57,7 +57,7 @@ def call(body) {
           }
         }
         steps {
-          sh "mvn clean deploy $MAVEN_PROFILES -U"
+          sh "mvn clean deploy $MAVEN_PROFILES -Dci=true -U"
         }
       }
       stage('Build main') {
@@ -68,7 +68,7 @@ def call(body) {
           }
         }
         steps {
-          sh "mvn clean deploy $MAVEN_OPTS_MAIN $MAVEN_PROFILES_MAIN -U"
+          sh "mvn clean deploy $MAVEN_OPTS_MAIN $MAVEN_PROFILES_MAIN -Dci=true -U"
         }
       }
       stage('SonarQube analysis') {
