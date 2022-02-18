@@ -94,7 +94,7 @@ def call(body) {
         steps {
           git branch: 'main', url: "$GIT_URL"
           git branch: 'develop', url: "$GIT_URL"
-          sh "mvn -B gitflow:release -DskipTestProject -DreleaseVersion=${VERSION}"
+          sh "mvn -B gitflow:release -DskipTestProject -DreleaseVersion=${VERSION} -DversionsForceUpdate=true"
         }
       }
     }
