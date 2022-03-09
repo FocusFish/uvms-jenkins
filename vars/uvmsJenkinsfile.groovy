@@ -12,23 +12,26 @@ def call(body) {
   def MAVEN_OPTS_RELEASE      = (inParams.MAVEN_OPTS_RELEASE)     ?: '-DskipTests'
   def Boolean DOCKER          = (inParams.DOCKER)                 ?: false
 
-  def LOCK_RESOURCE           = (DOCKER) ? 'Docker' : ''
   def version
 
-  node {
+  node('uvms') {
     checkout scm
-    def currentVersion = sh script: 'mvn help:evaluate -Dexpression=project.version -q -DforceStdout', returnStdout: true
-    version = currentVersion.replace("-SNAPSHOT", "")
+    withMaven(maven: 'Maven3', globalMavenSettingsConfig: 'focus_maven_settings.xml') {
+      def currentVersion = sh script: 'mvn help:evaluate -Dexpression=project.version -q -DforceStdout | tail -1', returnStdout: true
+      version = currentVersion.replace("-SNAPSHOT", "")
+    }
   }
 
   pipeline {
-    agent any
-    options {
-      lock resource: LOCK_RESOURCE
+    agent {
+      label 'uvms'
     }
     parameters {
       booleanParam(defaultValue: false, name: 'RELEASE', description: 'Create a release (develop branch only)')
       string(name: 'VERSION', defaultValue: version, description: 'Release version')
+    }
+    options {
+      buildDiscarder(logRotator(numToKeepStr: '10 '))
     }
     tools {
       maven 'Maven3'
@@ -57,7 +60,9 @@ def call(body) {
           }
         }
         steps {
-          sh "mvn clean deploy $MAVEN_PROFILES -Dci=true -U"
+          withMaven(maven: 'Maven3', globalMavenSettingsConfig: 'focus_maven_settings.xml') {
+            sh "mvn clean deploy $MAVEN_PROFILES -Dci=true -U"
+          }
         }
       }
       stage('Build release') {
@@ -68,7 +73,9 @@ def call(body) {
           }
         }
         steps {
-          sh "mvn clean deploy $MAVEN_OPTS_RELEASE $MAVEN_PROFILES_RELEASE -Dci=true -U"
+          withMaven(maven: 'Maven3', globalMavenSettingsConfig: 'focus_maven_settings.xml') {
+            sh "mvn clean deploy $MAVEN_OPTS_RELEASE $MAVEN_PROFILES_RELEASE -Dci=true -U"
+          }
         }
       }
       stage('SonarQube analysis') {
@@ -80,7 +87,9 @@ def call(body) {
         }
         steps{ 
           withSonarQubeEnv('Sonarqube.com') {
-            sh "mvn $SONAR_MAVEN_GOAL -Dsonar.dynamicAnalysis=reuseReports -Dsonar.host.url=$SONAR_HOST_URL -Dsonar.login=$SONAR_AUTH_TOKEN $SONAR_EXTRA_PROPS"
+            withMaven(maven: 'Maven3', globalMavenSettingsConfig: 'focus_maven_settings.xml') {
+              sh "mvn $SONAR_MAVEN_GOAL -Dsonar.dynamicAnalysis=reuseReports -Dsonar.host.url=$SONAR_HOST_URL -Dsonar.login=$SONAR_AUTH_TOKEN $SONAR_EXTRA_PROPS"
+            }
           }
         }
       }
@@ -94,7 +103,9 @@ def call(body) {
         steps {
           git branch: 'main', url: "$GIT_URL"
           git branch: 'develop', url: "$GIT_URL"
-          sh "mvn -B gitflow:release -DskipTestProject -DreleaseVersion=${VERSION} -DversionsForceUpdate=true"
+          withMaven(maven: 'Maven3', globalMavenSettingsConfig: 'focus_maven_settings.xml') {
+            sh "mvn -B gitflow:release -DskipTestProject -DreleaseVersion=${VERSION} -DversionsForceUpdate=true"
+          }
         }
       }
     }
