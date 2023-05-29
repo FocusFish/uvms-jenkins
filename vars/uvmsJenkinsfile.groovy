@@ -22,13 +22,16 @@ def call(body) {
     }
   }
 
+  def parameterList = []
+  if (env.BRANCH_NAME == 'develop') {
+    parameterList.add(booleanParam(defaultValue: false, name: 'RELEASE', description: 'Create a release'))
+    parameterList.add(string(name: 'VERSION', defaultValue: version, description: 'Release version'))
+  }
+  properties([parameters(parameterList)])
+
   pipeline {
     agent {
       label 'uvms'
-    }
-    parameters {
-      booleanParam(defaultValue: false, name: 'RELEASE', description: 'Create a release (develop branch only)')
-      string(name: 'VERSION', defaultValue: version, description: 'Release version')
     }
     options {
       buildDiscarder(logRotator(numToKeepStr: '10 '))
@@ -104,6 +107,8 @@ def call(body) {
           git branch: 'main', url: "$GIT_URL"
           git branch: 'develop', url: "$GIT_URL"
           withMaven(maven: 'Maven3', globalMavenSettingsConfig: 'focus_maven_settings.xml') {
+            sh "git config user.name uvmsci"
+            sh "git config user.email uvmsci@gmail.com"
             sh "mvn -B gitflow:release -DskipTestProject -DreleaseVersion=${VERSION} -DversionsForceUpdate=true"
           }
         }
