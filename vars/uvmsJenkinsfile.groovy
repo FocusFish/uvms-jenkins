@@ -65,6 +65,7 @@ def call(body) {
         steps {
           withMaven(maven: 'Maven3', globalMavenSettingsConfig: 'focus_maven_settings.xml') {
             sh "mvn clean deploy $MAVEN_PROFILES -Dci=true -U"
+            script {currentBuild.displayName = "#${BUILD_NUMBER}- Built " +   readMavenPom().getVersion()}
           }
         }
       }
@@ -78,6 +79,7 @@ def call(body) {
         steps {
           withMaven(maven: 'Maven3', globalMavenSettingsConfig: 'focus_maven_settings.xml') {
             sh "mvn clean deploy $MAVEN_OPTS_RELEASE $MAVEN_PROFILES_RELEASE -Dci=true -U"
+            script {currentBuild.displayName = "#${BUILD_NUMBER}- Released " + readMavenPom().getVersion()}
           }
         }
       }
@@ -110,6 +112,8 @@ def call(body) {
             sh "git config user.name uvmsci"
             sh "git config user.email uvmsci@gmail.com"
             sh "mvn -B gitflow:release -DskipTestProject -DreleaseVersion=${VERSION} -DversionsForceUpdate=true"
+            
+            script {currentBuild.displayName = "#${BUILD_NUMBER}- Start release of ${VERSION}"}
           }
         }
       }
