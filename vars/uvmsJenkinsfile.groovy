@@ -8,9 +8,10 @@ def call(body) {
   //END evaluate
 
   def MAVEN_PROFILES          = (inParams.MAVEN_PROFILES)         ?: ''
-  def MAVEN_PROFILES_RELEASE  = (inParams.MAVEN_PROFILES_RELEASE) ?: ''
-  def MAVEN_OPTS_RELEASE      = (inParams.MAVEN_OPTS_RELEASE)     ?: '-DskipTests'
+  def MAVEN_PROFILES_RELEASE   = (inParams.MAVEN_PROFILES_RELEASE) ?: ''
+  def MAVEN_OPTS_RELEASE       = (inParams.MAVEN_OPTS_RELEASE)     ?: '-DskipTests'
   def Boolean DOCKER          = (inParams.DOCKER)                 ?: false
+  def SONAR_JDK_TOOL          = 'JDK17'
 
   def version
 
@@ -92,7 +93,7 @@ def call(body) {
         }
         steps{ 
           withSonarQubeEnv('Sonarqube.com') {
-            withMaven(maven: 'Maven3', globalMavenSettingsConfig: 'focus_maven_settings.xml') {
+            withMaven(maven: 'Maven3', globalMavenSettingsConfig: 'focus_maven_settings.xml', jdk: "${SONAR_JDK_TOOL}") {
               sh "mvn $SONAR_MAVEN_GOAL -Dsonar.dynamicAnalysis=reuseReports -Dsonar.host.url=$SONAR_HOST_URL -Dsonar.login=$SONAR_AUTH_TOKEN $SONAR_EXTRA_PROPS"
             }
           }
