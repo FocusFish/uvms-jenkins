@@ -1,5 +1,5 @@
 def call(body) {
-  
+
   // START evaluate the body block, and collect configuration into the object
   def inParams = [:]
   body.resolveStrategy = Closure.DELEGATE_FIRST
@@ -7,17 +7,22 @@ def call(body) {
   body()
   //END evaluate
 
-  def MAVEN_PROFILES          = (inParams.MAVEN_PROFILES)         ?: ''
-  def MAVEN_PROFILES_RELEASE   = (inParams.MAVEN_PROFILES_RELEASE) ?: ''
-  def MAVEN_OPTS_RELEASE       = (inParams.MAVEN_OPTS_RELEASE)     ?: '-DskipTests'
-  def Boolean DOCKER          = (inParams.DOCKER)                 ?: false
-  def SONAR_JDK_TOOL          = 'JDK17'
+  // Maven configuration options
+  def MAVEN_PROFILES = (inParams.MAVEN_PROFILES) ?: ''
+  def MAVEN_PROFILES_RELEASE = (inParams.MAVEN_PROFILES_RELEASE) ?: ''
+  def MAVEN_OPTS = (inParams.MAVEN_OPTS) ?: ''
+  def MAVEN_OPTS_RELEASE = (inParams.MAVEN_OPTS_RELEASE) ?: '-DskipTests'
+  def MAVEN_SETTINGS = (inParams.MAVEN_SETTINGS) ?: 'focus_maven_settings.xml';
+
+  // Misc. configuration options
+  def Boolean DOCKER = (inParams.DOCKER) ?: false
+  def SONAR_JDK_TOOL = 'JDK17'
 
   def version
 
   node('uvms') {
     checkout scm
-    withMaven(maven: 'Maven3', globalMavenSettingsConfig: 'focus_maven_settings.xml') {
+    withMaven(maven: 'Maven3', globalMavenSettingsConfig: "${MAVEN_SETTINGS}") {
       def currentVersion = sh script: 'mvn help:evaluate -Dexpression=project.version -q -DforceStdout | tail -1', returnStdout: true
       version = currentVersion.replace("-SNAPSHOT", "")
     }
@@ -64,8 +69,8 @@ def call(body) {
           }
         }
         steps {
-          withMaven(maven: 'Maven3', globalMavenSettingsConfig: 'focus_maven_settings.xml') {
-            sh "mvn clean deploy $MAVEN_PROFILES -Dci=true -U"
+          withMaven(maven: 'Maven3', globalMavenSettingsConfig: "${MAVEN_SETTINGS}") {
+            sh "mvn clean deploy $MAVEN_OPTS $MAVEN_PROFILES -Dci=true -U"
             script {currentBuild.displayName = "#${BUILD_NUMBER}- Built " +   readMavenPom().getVersion()}
           }
         }
@@ -78,7 +83,7 @@ def call(body) {
           }
         }
         steps {
-          withMaven(maven: 'Maven3', globalMavenSettingsConfig: 'focus_maven_settings.xml') {
+          withMaven(maven: 'Maven3', globalMavenSettingsConfig: "${MAVEN_SETTINGS}") {
             sh "mvn clean deploy $MAVEN_OPTS_RELEASE $MAVEN_PROFILES_RELEASE -Dci=true -U"
             script {currentBuild.displayName = "#${BUILD_NUMBER}- Released " + readMavenPom().getVersion()}
           }
@@ -91,9 +96,9 @@ def call(body) {
             expression { !params.RELEASE }
           }
         }
-        steps{ 
+        steps{
           withSonarQubeEnv('Sonarqube.com') {
-            withMaven(maven: 'Maven3', globalMavenSettingsConfig: 'focus_maven_settings.xml', jdk: "${SONAR_JDK_TOOL}") {
+            withMaven(maven: 'Maven3', globalMavenSettingsConfig: "${MAVEN_SETTINGS}", jdk: "${SONAR_JDK_TOOL}") {
               sh "mvn $SONAR_MAVEN_GOAL -Dsonar.dynamicAnalysis=reuseReports -Dsonar.host.url=$SONAR_HOST_URL -Dsonar.login=$SONAR_AUTH_TOKEN $SONAR_EXTRA_PROPS"
             }
           }
@@ -109,11 +114,11 @@ def call(body) {
         steps {
           git branch: 'main', url: "$GIT_URL"
           git branch: 'develop', url: "$GIT_URL"
-          withMaven(maven: 'Maven3', globalMavenSettingsConfig: 'focus_maven_settings.xml') {
+          withMaven(maven: 'Maven3', globalMavenSettingsConfig: "${MAVEN_SETTINGS}") {
             sh "git config user.name uvmsci"
             sh "git config user.email uvmsci@gmail.com"
             sh "mvn -B gitflow:release -DskipTestProject -DreleaseVersion=${VERSION} -DversionsForceUpdate=true"
-            
+
             script {currentBuild.displayName = "#${BUILD_NUMBER}- Start release of ${VERSION}"}
           }
         }
