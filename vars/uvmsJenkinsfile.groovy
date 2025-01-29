@@ -102,7 +102,7 @@ def call(body) {
         steps{
           withSonarQubeEnv("${SONAR_ENV}") {
             withMaven(maven: 'Maven3', globalMavenSettingsConfig: "${MAVEN_SETTINGS}", jdk: "${SONAR_JDK_TOOL}") {
-              sh "mvn -Dsonar.dynamicAnalysis=reuseReports sonar:sonar"
+              sh "mvn $SONAR_MAVEN_GOAL -Dsonar.dynamicAnalysis=reuseReports -Dsonar.host.url=$SONAR_HOST_URL -Dsonar.login=$SONAR_AUTH_TOKEN $SONAR_EXTRA_PROPS"
             }
           }
         }
