@@ -16,6 +16,7 @@ def call(body) {
 
   // Misc. configuration options
   def Boolean DOCKER = (inParams.DOCKER) ?: false
+  def GIT_CREDS_REF = (inParams.GIT_CREDS_REF) ?: ''
 
   def SONAR_ENV = (inParams.SONAR_ENV) ?: 'Sonarqube.com'
   def SONAR_JDK_TOOL = 'JDK17'
@@ -73,7 +74,7 @@ def call(body) {
         steps {
           withMaven(maven: 'Maven3', globalMavenSettingsConfig: "${MAVEN_SETTINGS}") {
             sh "mvn clean deploy $MAVEN_OPTS $MAVEN_PROFILES -Dci=true -U"
-            script {currentBuild.displayName = "#${BUILD_NUMBER}- Built " +   readMavenPom().getVersion()}
+            script {currentBuild.displayName = "#${BUILD_NUMBER}- Built " + readMavenPom().getVersion()}
           }
         }
       }
@@ -111,6 +112,7 @@ def call(body) {
           allOf {
             branch 'develop'
             expression { params.RELEASE }
+            expression { GIT_CREDS_REF.isEmpty() }
           }
         }
         steps {
@@ -120,6 +122,28 @@ def call(body) {
             sh "git config user.name uvmsci"
             sh "git config user.email uvmsci@gmail.com"
             sh "mvn -B gitflow:release -DskipTestProject -DreleaseVersion=${VERSION} -DversionsForceUpdate=true"
+
+            script {currentBuild.displayName = "#${BUILD_NUMBER}- Start release of ${VERSION}"}
+          }
+        }
+      }
+      stage('Release with credentials') {
+        when {
+          allOf {
+            branch 'develop'
+            expression { params.RELEASE }
+            expression { !GIT_CREDS_REF.isEmpty() }
+          }
+        }
+        steps {
+          git branch: 'main', url: "$GIT_URL"
+          git branch: 'develop', url: "$GIT_URL"
+          withMaven(maven: 'Maven3', globalMavenSettingsConfig: "${MAVEN_SETTINGS}") {
+            withCredentials([gitUsernamePassword(credentialsId: "${GIT_CREDS_REF}")]) {
+                sh "git config user.name uvmsci"
+                sh "git config user.email uvmsci@gmail.com"
+                sh "mvn -B gitflow:release -DskipTestProject -DreleaseVersion=${VERSION} -DversionsForceUpdate=true"
+            }
 
             script {currentBuild.displayName = "#${BUILD_NUMBER}- Start release of ${VERSION}"}
           }
