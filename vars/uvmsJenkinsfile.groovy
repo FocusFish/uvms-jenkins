@@ -62,6 +62,7 @@ def call(body) {
         }
         steps {
           sh 'docker ps -a -q|xargs -r docker rm -f'
+          sh 'docker system prune -f --volumes'
         }
       }
       stage('Build') {
