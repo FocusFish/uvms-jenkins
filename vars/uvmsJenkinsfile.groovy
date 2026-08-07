@@ -19,7 +19,7 @@ def call(body) {
   def GIT_CREDS_REF = (inParams.GIT_CREDS_REF) ?: ''
 
   def SONAR_ENV = (inParams.SONAR_ENV) ?: 'Sonarqube.com'
-  def SONAR_JDK_TOOL = 'JDK17'
+  def SONAR_JDK_TOOL = 'JDK21'
 
   def version
 
