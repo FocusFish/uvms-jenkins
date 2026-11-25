@@ -73,9 +73,13 @@ def call(body) {
           }
         }
         steps {
-          withMaven(maven: 'Maven3', globalMavenSettingsConfig: "${MAVEN_SETTINGS}") {
-            sh "mvn clean deploy $MAVEN_OPTS $MAVEN_PROFILES -Dci=true -U"
-            script {currentBuild.displayName = "#${BUILD_NUMBER}- Built " + readMavenPom().getVersion()}
+          configFileProvider([
+            configFile(fileId: "${MAVEN_SETTINGS}", variable: 'GLOBAL_MVN_SETTINGS')
+          ]) {
+            withMaven(maven: 'Maven3', globalMavenSettingsConfig: "${MAVEN_SETTINGS}") {
+              sh "mvn clean deploy $MAVEN_OPTS $MAVEN_PROFILES -Dci=true -Dorg.apache.maven.global-settings=\$GLOBAL_MVN_SETTINGS -U "
+              script {currentBuild.displayName = "#${BUILD_NUMBER}- Built " + readMavenPom().getVersion()}
+            }
           }
         }
       }
@@ -87,9 +91,13 @@ def call(body) {
           }
         }
         steps {
-          withMaven(maven: 'Maven3', globalMavenSettingsConfig: "${MAVEN_SETTINGS}") {
-            sh "mvn clean deploy $MAVEN_OPTS_RELEASE $MAVEN_PROFILES_RELEASE -Dci=true -U"
-            script {currentBuild.displayName = "#${BUILD_NUMBER}- Released " + readMavenPom().getVersion()}
+          configFileProvider([
+            configFile(fileId: "${MAVEN_SETTINGS}", variable: 'GLOBAL_MVN_SETTINGS')
+          ]) {
+            withMaven(maven: 'Maven3', globalMavenSettingsConfig: "${MAVEN_SETTINGS}") {
+              sh "mvn clean deploy $MAVEN_OPTS_RELEASE $MAVEN_PROFILES_RELEASE -Dci=true -Dorg.apache.maven.global-settings=\$GLOBAL_MVN_SETTINGS -U"
+              script {currentBuild.displayName = "#${BUILD_NUMBER}- Released " + readMavenPom().getVersion()}
+            }
           }
         }
       }
